@@ -32,7 +32,12 @@ class API {
         return $client;
     }
 
-    static function getAuthChannelClientByPost(\WP_Post $authChannel, $refreshToken = true) {
+    /**
+     * @param \WP_Post $authChannel
+     * @param boolean $refreshToken
+     * @return \Google_Client
+     */
+    static function getAuthClientByAuthChannel(\WP_Post $authChannel, $refreshToken = true) {
         $client = self::getAuthClient();
         $accessTokenStr = get_post_meta($authChannel->ID, 'access_token', true);
 
@@ -47,9 +52,15 @@ class API {
 
         $client->setAccessToken($accessToken);
 
-        if ($client->isAccessTokenExpired()) {
-            $accessToken = $client->fetchAccessTokenWithRefreshToken();
-            self::updateAuthorizedChannelMeta($accessToken);
+        if ($refreshToken && $client->isAccessTokenExpired()) {
+            $result = $client->fetchAccessTokenWithRefreshToken();
+
+            if (!empty($result['error'])) {
+                throw new \Exception(sprintf('Failed to refresh token. (error: %s, errorDescription: %s)', $result['error'], $result['error_description']));
+            }
+
+            $accessToken = $result;
+            self::updateAuthorizedChannelMeta($authChannel, $accessToken);
         }
 
         return $client;
