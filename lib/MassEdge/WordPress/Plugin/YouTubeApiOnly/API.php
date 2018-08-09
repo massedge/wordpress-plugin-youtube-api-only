@@ -26,6 +26,7 @@ class API {
 
         $client->addScope(\Google_Service_YouTube::YOUTUBE_READONLY);
         $client->addScope(\Google_Service_YouTube::YOUTUBE_UPLOAD);
+        $client->addScope(\Google_Service_YouTube::YOUTUBE_FORCE_SSL);
         $client->setAccessType('offline');
         $client->setApprovalPrompt('force');
 
