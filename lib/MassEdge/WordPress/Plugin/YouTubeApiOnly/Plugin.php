@@ -14,6 +14,7 @@ class Plugin {
 
     function registerHooks() {
         $this->modules = [
+            new Module\AdminPageAuthorize(),
             new Module\AdminPageSettings(),
             new Module\PostTypeAuthorizedChannel(),
         ];

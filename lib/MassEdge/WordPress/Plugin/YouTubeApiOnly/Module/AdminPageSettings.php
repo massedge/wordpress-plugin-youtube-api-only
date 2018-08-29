@@ -15,17 +15,11 @@ class AdminPageSettings extends Base {
     const FIELD_CLIENT_ID = 'client_id';
     const FIELD_CLIENT_SECRET = 'client_secret';
 
-    const AUTHORIZE_QUERY_ARG = 'authorize';
-    const AUTHORIZE_QUERY_ARG_AUTH_CODE = 'code';
-    const TRANSIENT_NOTICE_WITH_USER_ID = '%d-me-ytapi-config-notice';
-
     private $errors = [];
 
     function registerHooks() {
         add_action('admin_menu', [$this, 'add_submenu_page']);
         add_action('admin_init', [$this, 'process_form']);
-        add_action('admin_init', [$this, 'authorize']);
-        add_action('admin_notices', [$this, 'admin_notices']);
     }
     
     function add_submenu_page() {
@@ -79,90 +73,8 @@ class AdminPageSettings extends Base {
         API::setClientId($clientId);
         API::setClientSecret($clientSecret);
         
-		wp_redirect($this->getUri());
+		wp_redirect(self::getUri());
 		die();
-    }
-
-    function authorize() {
-        if (empty($_GET[self::AUTHORIZE_QUERY_ARG])) return;
-        if (empty($_GET[self::AUTHORIZE_QUERY_ARG_AUTH_CODE])) return;
-
-        $authCode = $_GET[self::AUTHORIZE_QUERY_ARG_AUTH_CODE];
-
-        $client = API::getAuthClient();
-        $client->setRedirectUri($this->getRedirectUri());
-        $result = $client->authenticate($authCode);
-
-        if (!empty($result['error'])) {
-            $this->setNotice(sprintf('Failed to authorize channel. %s (%s)', $result['error_description'], $result['error']), 'error');
-        } else {
-            $accessToken = $result;
-
-            $youtube = new \Google_Service_YouTube($client);
-
-            /** @var \Google_Service_YouTube_ChannelListResponse[] $response */
-            $response = $youtube->channels->listChannels('snippet,contentDetails,statistics', [
-                'mine' => true,
-            ]);
-
-            /** @var \Google_Service_YouTube_Channel[] $channels */
-            $channels = $response->getItems();
-
-            if (sizeof($channels) <= 0) {
-                $this->setNotice('No channels are associated with this account.', 'error');
-            } else {
-                $channel = $channels[0];
-
-                try {
-                    API::addAuthorizedChannel($accessToken, $channel);
-
-                    $this->setNotice(sprintf('Successfully authorized \'%s\' channel.', $channel->getSnippet()->getTitle()), 'success');
-                } catch(\Exception $ex) {
-                    $this->setNotice($ex->getMessage(), 'error');
-                }
-            }
-        }
-        
-		wp_redirect($this->getUri());
-		die();
-    }
-
-    private function getNoticeTransient() {
-        return sprintf(self::TRANSIENT_NOTICE_WITH_USER_ID, get_current_user_id());
-    }
-
-    private function setNotice($notice, $type) {
-        $value = json_encode([
-            'text' => $notice,
-            'type' => $type,
-        ]);
-
-        return set_transient($this->getNoticeTransient(), $value);
-    }
-
-    private function getNotice() {
-        $transient = get_transient($this->getNoticeTransient());
-
-        if ($transient) {
-            delete_transient($this->getNoticeTransient());
-
-            return json_decode($transient, true);
-        }
-
-        return null;
-    }
-
-    function admin_notices() {
-        $notice = $this->getNotice();
-        if (empty($notice)) return;
-
-        $message = sprintf(
-            '<div class="%1$s"><p>%2$s</p></div>',
-            'notice is-dismissible notice-' . esc_attr($notice['type']),
-            $notice['text']
-        );
-
-        echo $message;
     }
 
     private function validateApiKey($apiKey) {
@@ -208,7 +120,7 @@ class AdminPageSettings extends Base {
 
     <br>
 
-    <form action="<?php echo esc_attr($this->getUri()) ?>" method="post">
+    <form action="<?php echo esc_attr(self::getUri()) ?>" method="post">
 
         <h2>API Key</h2>
         <p>Identifies your project using a simple API key to check quota and access.</p>
@@ -232,7 +144,7 @@ class AdminPageSettings extends Base {
 
         <h2>OAuth client ID</h2>
         <p>Requests user consent so your app can access the user's data.</p>
-        <p>When creating add the following url to "Authorized redirect URIs": <br /><?php echo esc_html($this->getRedirectUri()) ?></p>
+        <p>When creating add the following url to "Authorized redirect URIs": <br /><?php echo esc_html(AdminPageAuthorize::getRedirectUri()) ?></p>
 
         <table class="form-table">
             <tr>
@@ -267,44 +179,13 @@ class AdminPageSettings extends Base {
 
         <?php wp_nonce_field(self::FIELD_NONCE_SUBMIT_ACTION) ?>
     </form>
-
-    <?php if (!$isPost && API::getClientId() && API::getClientSecret()): ?>
-    <table class="form-table">
-        <tr>
-            <th>Authorize Channel</th>
-            <td>
-                <a href="<?php echo esc_attr($this->getAuthUrl()) ?>">Authorize</a>
-                <p>
-                    This will ask you to give authorization for this plugin
-                    to access/modify a YouTube channel.
-                </p>
-            </td>
-        </tr>
-    </table>
-    <?php endif ?>
 </div>
         <?php
         echo ob_get_clean();
     }
-
-    function getAuthUrl() {
-        $client = API::getAuthClient();
-        $client->setRedirectUri($this->getRedirectUri());
-        return $client->createAuthUrl();
-    }
-
-    function authenticate($authCode) {
-        $client = API::getAuthClient();
-        $accessToken = $client->authenticate($authCode);
-        return $accessToken;
-    }
     
 
-    function getUri() {
+    static function getUri() {
         return admin_url(sprintf('options-general.php?page=%s', self::MENU_SLUG));
-    }
-
-    function getRedirectUri() {
-        return add_query_arg(self::AUTHORIZE_QUERY_ARG, 'yes', $this->getUri());
     }
 }
