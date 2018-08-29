@@ -3,7 +3,7 @@
 Plugin Name: YouTube API Only
 Plugin URI: https://github.com/massedge/wordpress-plugin-youtube-api-only
 Description: Wordpress plugin that provides a configuration interface for YouTube API integration. It's meant to be used by developers who want to integrate YouTube API in their own themes/plugins.
-Version: 0.0.1
+Version: 0.1.0
 Author: Mass Edge Inc.
 Author URI: https://www.massedge.com/
 License: GPL3

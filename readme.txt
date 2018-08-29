@@ -4,7 +4,7 @@ Tags: youtube api, integration, configuration
 Requires at least: 4.7.10
 Tested up to: 4.9.7
 Requires PHP: 5.6
-Stable tag: 0.0.1
+Stable tag: 0.1.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -20,6 +20,10 @@ Wordpress plugin that provides a configuration interface for YouTube API integra
 2. Go to Settings -> YouTube API via the admin menu to access the settings page.
 
 == Changelog ==
+
+= 0.1.0 =
+* Beta release.
+* Moved Channel Authorization logic from Settings to a separate subpage of "Authorized YouTube Channels".
 
 = 0.0.1 =
 * Alpha release.

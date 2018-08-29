@@ -1,7 +1,7 @@
 {
 	"name":        "massedge/wordpress-plugin-youtube-api-only",
 	"description": "Wordpress plugin that provides a configuration interface for YouTube API integration. It's meant to be used by developers who want to integrate YouTube API in their own themes/plugins.",
-	"version":     "0.0.1",
+	"version":     "0.1.0",
 	"type":        "wordpress-plugin",
 	"license":     "GPL-3.0",
 	"require": {
